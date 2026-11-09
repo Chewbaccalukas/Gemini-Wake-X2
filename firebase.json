@@ -1,7 +1,7 @@
 {
   "firestore": [
     {
-      "database": "ai-studio-android-geminiwa-de0f3859-20da-4836-8f54-1ab4d1cca64c",
+      "database": "ai-studio-android-geminiwa-b9ffe5cd-bfb0-4628-b23c-8e9948aa0121",
       "rules": "firestore.rules"
     }
   ],

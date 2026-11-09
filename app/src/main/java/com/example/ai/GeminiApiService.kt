@@ -259,11 +259,11 @@ class GeminiApiService {
     }.flowOn(Dispatchers.IO)
 
     /**
-     * Transcribes audio bytes using gemini-3.5-transcribe model.
+     * Transcribes audio bytes using gemini-3.8-flash model.
      */
     suspend fun transcribeAudio(audioBytes: ByteArray, mimeType: String = "audio/wav"): String = withContext(Dispatchers.IO) {
         try {
-            val model = Firebase.ai.generativeModel(modelName = "gemini-3.5-transcribe")
+            val model = Firebase.ai.generativeModel(modelName = "gemini-3.8-flash")
             val response = withTimeout(30_000L) {
                 model.generateContent(
                     content {

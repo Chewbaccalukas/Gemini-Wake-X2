@@ -52,15 +52,11 @@ abstract class FirestoreEmulatorTestBase {
         }
 
         val resId = context.resources.getIdentifier("firestore_database_id", "string", context.packageName)
-        databaseId = if (resId != 0) context.getString(resId) else "(default)"
+        databaseId = if (resId != 0) context.getString(resId) else "demo-database"
 
         clearFirestoreEmulatorData()
 
-        firestore = if (resId != 0) {
-            FirebaseFirestore.getInstance(databaseId)
-        } else {
-            FirebaseFirestore.getInstance()
-        }
+        firestore = FirebaseFirestore.getInstance(databaseId)
 
         try {
             firestore.useEmulator(FIRESTORE_HOST, FIRESTORE_PORT)
