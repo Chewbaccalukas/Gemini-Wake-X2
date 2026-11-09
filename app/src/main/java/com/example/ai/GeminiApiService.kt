@@ -120,11 +120,17 @@ class GeminiApiService {
 
         while (true) {
             var voiceStreamSuccess = false
+            var usedFallbackText = false
             var caughtError: Exception? = null
 
             val hasAudio = userAudioBytes != null &&
                 WakeWordManager.shouldTransmitAudioPacket(userAudioBytes.size, userAudioBytes)
             val hasAttachment = attachmentBytes != null && attachmentBytes.isNotEmpty() && !attachmentMimeType.isNullOrBlank()
+            val traceSession = com.example.util.PerformanceMonitorManager.startGeminiStreamTrace(
+                modelName = "gemini-3.8-flash",
+                requestAudio = requestAudio,
+                hasAttachment = hasAttachment
+            )
 
             val userContent = content("user") {
                 if (hasAttachment) {
@@ -173,6 +179,7 @@ class GeminiApiService {
                                         WakeWordManager.shouldTransmitAudioPacket(part.inlineData.size, part.inlineData)
                                     ) {
                                         voiceStreamSuccess = true
+                                        traceSession.recordChunk(isAudio = true)
                                         emit(
                                             GeminiStreamChunk(
                                                 pcmAudioBytes = part.inlineData,
@@ -186,6 +193,7 @@ class GeminiApiService {
                             val text = chunk.text.orEmpty()
                             if (text.isNotEmpty()) {
                                 voiceStreamSuccess = true
+                                traceSession.recordChunk(isAudio = false)
                                 emit(
                                     GeminiStreamChunk(
                                         text = text,
@@ -197,6 +205,7 @@ class GeminiApiService {
                         }
                     }
                 } catch (e: CancellationException) {
+                    traceSession.finish("cancelled")
                     throw e
                 } catch (e: Exception) {
                     caughtError = e
@@ -229,12 +238,15 @@ class GeminiApiService {
                         stream.collect { chunk ->
                             val text = chunk.text.orEmpty()
                             if (text.isNotEmpty()) {
+                                traceSession.recordChunk(isAudio = false)
                                 emit(GeminiStreamChunk(text = text, isAudio = false))
                             }
                         }
                     }
+                    usedFallbackText = requestAudio
                     caughtError = null // Successfully completed fallback text stream
                 } catch (e: CancellationException) {
+                    traceSession.finish("cancelled")
                     throw e
                 } catch (e: Exception) {
                     caughtError = e
@@ -245,15 +257,18 @@ class GeminiApiService {
                 if (!retriedAfterFailover && apiKeyManager != null && apiKeyManager.isQuotaOr429Error(caughtError)) {
                     val failoverActivated = apiKeyManager.handleQuotaExhaustionAndFailover()
                     if (failoverActivated) {
+                        traceSession.finish("quota_failover_retry")
                         retriedAfterFailover = true
                         Log.i(TAG, "HTTP 429 / RESOURCE_EXHAUSTED encountered. Retrying execution with Backup Key...")
                         continue // Retry loop with new active backup key!
                     }
                 }
+                traceSession.finish("error")
                 Log.e(TAG, "Streaming failed: ${caughtError.message}", caughtError)
                 throw caughtError
             }
 
+            traceSession.finish(if (usedFallbackText) "fallback_text" else "success")
             break // Request succeeded
         }
     }.flowOn(Dispatchers.IO)
@@ -263,16 +278,22 @@ class GeminiApiService {
      */
     suspend fun transcribeAudio(audioBytes: ByteArray, mimeType: String = "audio/wav"): String = withContext(Dispatchers.IO) {
         try {
-            val model = Firebase.ai.generativeModel(modelName = "gemini-3.8-flash")
-            val response = withTimeout(30_000L) {
-                model.generateContent(
-                    content {
-                        inlineData(audioBytes, mimeType)
-                        text("Transcribe this audio accurately.")
-                    }
-                )
+            com.example.util.PerformanceMonitorManager.traceAudioTranscription(
+                modelName = "gemini-3.8-flash",
+                mimeType = mimeType,
+                audioBytesCount = audioBytes.size
+            ) {
+                val model = Firebase.ai.generativeModel(modelName = "gemini-3.8-flash")
+                val response = withTimeout(30_000L) {
+                    model.generateContent(
+                        content {
+                            inlineData(audioBytes, mimeType)
+                            text("Transcribe this audio accurately.")
+                        }
+                    )
+                }
+                response.text ?: ""
             }
-            response.text ?: ""
         } catch (e: Exception) {
             Log.e(TAG, "Transcription failed: ${e.message}")
             ""

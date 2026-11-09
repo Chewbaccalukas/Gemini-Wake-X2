@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for integrating Firebase Performance Monitoring to capture app startup time (automatic + custom onCreate-to-first-frame trace) and Gemini API latency (Time to First Token, total stream duration, audio chunk counts, and transcription latency), along with a live in-app Performance Telemetry card in the Control Sheet.",
+  "updatedAt":  "2026-11-09T14:46:20.900333640Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

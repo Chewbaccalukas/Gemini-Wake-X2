@@ -94,11 +94,20 @@ class MainActivity : ComponentActivity() {
         // Mandatory App Check configuration with launch intent before any UI or Firebase operations
         configureAppCheck(this, intent)
 
+        // Start custom Firebase Performance startup trace (onCreate -> first Compose frame)
+        com.example.util.PerformanceMonitorManager.startAppStartupTrace(
+            launchMode = if (savedInstanceState == null) "cold_start" else "warm_recreate"
+        )
+
         handleIncomingIntent(intent)
 
         enableEdgeToEdge()
 
         setContent {
+            LaunchedEffect(Unit) {
+                androidx.compose.runtime.withFrameNanos { }
+                com.example.util.PerformanceMonitorManager.stopAppStartupTrace()
+            }
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
             val currentChat by viewModel.currentChat.collectAsStateWithLifecycle()
 
@@ -348,6 +357,7 @@ fun MainApp(
     val hotMessages by viewModel.hotMessages.collectAsStateWithLifecycle()
     val allMessages by viewModel.allMessages.collectAsStateWithLifecycle()
     val bufferMetrics by viewModel.bufferMetrics.collectAsStateWithLifecycle()
+    val performanceTelemetry by viewModel.performanceTelemetry.collectAsStateWithLifecycle()
     val relayServerState by viewModel.relayServerState.collectAsStateWithLifecycle()
     val hasMoreOlderMessages by viewModel.hasMoreOlderMessages.collectAsStateWithLifecycle()
     val isLoadingOlder by viewModel.isLoadingOlder.collectAsStateWithLifecycle()
@@ -1523,6 +1533,8 @@ fun MainApp(
                 },
                 onResetPermissions = { handleResetPermissions() },
                 onRequestRequiredPermissions = { launchRequiredPermissionsRequest() },
+                performanceTelemetry = performanceTelemetry,
+                onResetPerformanceTelemetry = { viewModel.resetPerformanceTelemetry() },
                 onDismiss = { showControlSheet = false }
             )
         }

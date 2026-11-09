@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.cache.BufferMetrics
 import com.example.data.model.ChatSession
 import com.example.ui.theme.AppTheme
+import com.example.util.PerformanceTelemetrySnapshot
 import com.example.voice.HandsFreeVoiceState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,8 @@ fun GeminiControlSheet(
     permissionsResetCount: Int = 0,
     onResetPermissions: () -> Unit = {},
     onRequestRequiredPermissions: () -> Unit = {},
+    performanceTelemetry: PerformanceTelemetrySnapshot = PerformanceTelemetrySnapshot(),
+    onResetPerformanceTelemetry: () -> Unit = {},
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -167,7 +170,7 @@ fun GeminiControlSheet(
             }
         }
 
-        // 3. Telemetry: Clock & Stopwatch
+        // 3. Telemetry: Clock, Stopwatch & Firebase Performance Latency
         ControlSection(title = "Session Telemetry", icon = Icons.Default.Timer) {
             ScreenClockCard(
                 stopwatchSeconds = stopwatchSeconds,
@@ -175,6 +178,11 @@ fun GeminiControlSheet(
                 accentColor = MaterialTheme.colorScheme.primary,
                 onToggleStopwatch = onToggleStopwatch,
                 onResetStopwatch = onResetStopwatch
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PerformanceTelemetryCard(
+                telemetry = performanceTelemetry,
+                onResetTelemetry = onResetPerformanceTelemetry
             )
         }
 

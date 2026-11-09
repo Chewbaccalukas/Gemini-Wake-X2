@@ -1165,8 +1165,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Hot memory-buffered messages (avoids freezing on large chat threads)
     val hotMessages: StateFlow<List<ChatMessage>> = bufferManager.hotMessages
     val bufferMetrics: StateFlow<BufferMetrics> = bufferManager.bufferMetrics
+    val performanceTelemetry: StateFlow<com.example.util.PerformanceTelemetrySnapshot> =
+        com.example.util.PerformanceMonitorManager.telemetry
     val hasMoreOlderMessages: StateFlow<Boolean> = bufferManager.hasMoreOlderMessages
     val isLoadingOlder: StateFlow<Boolean> = bufferManager.isLoadingOlder
+
+    fun resetPerformanceTelemetry() {
+        com.example.util.PerformanceMonitorManager.resetSessionTelemetry(preserveStartup = true)
+    }
 
     val allMessages: StateFlow<List<ChatMessage>> = messageRepository.getAllMessages()
         .stateIn(
