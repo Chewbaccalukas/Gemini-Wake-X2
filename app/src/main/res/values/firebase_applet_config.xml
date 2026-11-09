@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-geminiwa-de0f3859-20da-4836-8f54-1ab4d1cca64c</string>
+    <string name="recaptcha_site_key" translatable="false">6LegnwouAAAAANbPT968QP9i-0tIjVYKzDa5fQdk</string>
+    <string name="fallback_web_client_id" translatable="false">902660513506-geminiwake-default-web-client.apps.googleusercontent.com</string>
+</resources>
